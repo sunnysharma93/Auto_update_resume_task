@@ -17,6 +17,8 @@ import java.awt.Color; // For colors
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +32,31 @@ public class PdfEditService {
         if (text == null) return "";
         // Remove non-ASCII characters (anything above U+007F) and also strip newlines/tabs as before
         return text.replaceAll("[^\\x00-\\x7F]", "").replaceAll("[\\r\\n\\t]", "");
+    }
+
+    // Helper method to wrap text into lines based on max width
+    private List<String> wrapText(String text, PDFont font, float fontSize, float maxWidth) {
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+        for (String word : words) {
+            String testLine = line + (line.length() > 0 ? " " : "") + word;
+            try {
+                float width = font.getStringWidth(testLine) / 1000 * fontSize;
+                if (width > maxWidth && line.length() > 0) {
+                    lines.add(line.toString());
+                    line = new StringBuilder(word);
+                } else {
+                    line.append((line.length() > 0 ? " " : "") + word);
+                }
+            } catch (IOException e) {
+                logger.warn("Error calculating text width", e);
+            }
+        }
+        if (line.length() > 0) {
+            lines.add(line.toString());
+        }
+        return lines;
     }
 
     public byte[] applyEdits(InputStream pdfInput, EditRequest request) throws IOException {
@@ -51,7 +78,9 @@ public class PdfEditService {
                 PDFont font = PDType1Font.HELVETICA;
                 float fontSize = 12;
                 float xOffset = 50; // Left margin
-                float lineSpacing = 14;
+                float lineSpacing = 16; // Increased for better readability
+                float sectionGap = 25; // Extra space between sections
+                float maxTextWidth = pageWidth - 2 * xOffset; // Max width for wrapping
 
                 // Now open the content stream
                 PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true);
@@ -65,7 +94,7 @@ public class PdfEditService {
                     contentStream.setNonStrokingColor(Color.BLACK);
 
                     // Step 2: Overlay sections in ATS-friendly order with fixed positions
-                    float currentY = pageHeight - 50; // Start from top
+                    float currentY = pageHeight - 70; // Start from top with more margin
 
                     // Name (bold, larger font)
                     if (request.getName() != null && !request.getName().isEmpty()) {
@@ -74,7 +103,7 @@ public class PdfEditService {
                         contentStream.newLineAtOffset(xOffset, currentY);
                         contentStream.showText(sanitizeText(request.getName()));
                         contentStream.endText();
-                        currentY -= lineSpacing * 2; // Extra space
+                        currentY -= lineSpacing * 2; // Extra space after name
                     }
 
                     // Gmail and Number (side by side)
@@ -86,7 +115,7 @@ public class PdfEditService {
                                 (request.getNumber() != null ? " | " + sanitizeText(request.getNumber()) : "");
                         contentStream.showText(contact);
                         contentStream.endText();
-                        currentY -= lineSpacing;
+                        currentY -= lineSpacing + sectionGap; // Add section gap
                     }
 
                     // Summary
@@ -99,13 +128,17 @@ public class PdfEditService {
                         currentY -= lineSpacing;
                         String[] summaryLines = request.getSummary().split("\n");
                         for (String line : summaryLines) {
-                            contentStream.beginText();
-                            contentStream.setFont(font, fontSize);
-                            contentStream.newLineAtOffset(xOffset, currentY);
-                            contentStream.showText(sanitizeText(line));
-                            contentStream.endText();
-                            currentY -= lineSpacing;
+                            List<String> wrappedLines = wrapText(sanitizeText(line), font, fontSize, maxTextWidth);
+                            for (String wrappedLine : wrappedLines) {
+                                contentStream.beginText();
+                                contentStream.setFont(font, fontSize);
+                                contentStream.newLineAtOffset(xOffset, currentY);
+                                contentStream.showText(wrappedLine);
+                                contentStream.endText();
+                                currentY -= lineSpacing;
+                            }
                         }
+                        currentY -= sectionGap; // Add gap after section
                     }
 
                     // Education
@@ -118,13 +151,17 @@ public class PdfEditService {
                         currentY -= lineSpacing;
                         String[] eduLines = request.getEducation().split("\n");
                         for (String line : eduLines) {
-                            contentStream.beginText();
-                            contentStream.setFont(font, fontSize);
-                            contentStream.newLineAtOffset(xOffset, currentY);
-                            contentStream.showText(sanitizeText(line));
-                            contentStream.endText();
-                            currentY -= lineSpacing;
+                            List<String> wrappedLines = wrapText(sanitizeText(line), font, fontSize, maxTextWidth);
+                            for (String wrappedLine : wrappedLines) {
+                                contentStream.beginText();
+                                contentStream.setFont(font, fontSize);
+                                contentStream.newLineAtOffset(xOffset, currentY);
+                                contentStream.showText(wrappedLine);
+                                contentStream.endText();
+                                currentY -= lineSpacing;
+                            }
                         }
+                        currentY -= sectionGap;
                     }
 
                     // Skills
@@ -135,12 +172,16 @@ public class PdfEditService {
                         contentStream.showText("Skills");
                         contentStream.endText();
                         currentY -= lineSpacing;
-                        contentStream.beginText();
-                        contentStream.setFont(font, fontSize);
-                        contentStream.newLineAtOffset(xOffset, currentY);
-                        contentStream.showText(sanitizeText(request.getModifiedSkill()));
-                        contentStream.endText();
-                        currentY -= lineSpacing;
+                        List<String> wrappedLines = wrapText(sanitizeText(request.getModifiedSkill()), font, fontSize, maxTextWidth);
+                        for (String wrappedLine : wrappedLines) {
+                            contentStream.beginText();
+                            contentStream.setFont(font, fontSize);
+                            contentStream.newLineAtOffset(xOffset, currentY);
+                            contentStream.showText(wrappedLine);
+                            contentStream.endText();
+                            currentY -= lineSpacing;
+                        }
+                        currentY -= sectionGap;
                     }
 
                     // Projects
@@ -153,13 +194,17 @@ public class PdfEditService {
                         currentY -= lineSpacing;
                         String[] projectLines = request.getProjects().split("\n");
                         for (String line : projectLines) {
-                            contentStream.beginText();
-                            contentStream.setFont(font, fontSize);
-                            contentStream.newLineAtOffset(xOffset, currentY);
-                            contentStream.showText(sanitizeText(line));
-                            contentStream.endText();
-                            currentY -= lineSpacing;
+                            List<String> wrappedLines = wrapText(sanitizeText(line), font, fontSize, maxTextWidth);
+                            for (String wrappedLine : wrappedLines) {
+                                contentStream.beginText();
+                                contentStream.setFont(font, fontSize);
+                                contentStream.newLineAtOffset(xOffset, currentY);
+                                contentStream.showText(wrappedLine);
+                                contentStream.endText();
+                                currentY -= lineSpacing;
+                            }
                         }
+                        currentY -= sectionGap;
                     }
 
                     // Experience
@@ -172,13 +217,17 @@ public class PdfEditService {
                         currentY -= lineSpacing;
                         String[] expLines = request.getNewExperience().split("\n");
                         for (String line : expLines) {
-                            contentStream.beginText();
-                            contentStream.setFont(font, fontSize);
-                            contentStream.newLineAtOffset(xOffset, currentY);
-                            contentStream.showText(sanitizeText(line));
-                            contentStream.endText();
-                            currentY -= lineSpacing;
+                            List<String> wrappedLines = wrapText(sanitizeText(line), font, fontSize, maxTextWidth);
+                            for (String wrappedLine : wrappedLines) {
+                                contentStream.beginText();
+                                contentStream.setFont(font, fontSize);
+                                contentStream.newLineAtOffset(xOffset, currentY);
+                                contentStream.showText(wrappedLine);
+                                contentStream.endText();
+                                currentY -= lineSpacing;
+                            }
                         }
+                        currentY -= sectionGap;
                     }
 
                     // Certificates
@@ -189,12 +238,16 @@ public class PdfEditService {
                         contentStream.showText("Certificates");
                         contentStream.endText();
                         currentY -= lineSpacing;
-                        contentStream.beginText();
-                        contentStream.setFont(font, fontSize);
-                        contentStream.newLineAtOffset(xOffset, currentY);
-                        contentStream.showText(sanitizeText(request.getNewCertification()));
-                        contentStream.endText();
-                        currentY -= lineSpacing;
+                        List<String> wrappedLines = wrapText(sanitizeText(request.getNewCertification()), font, fontSize, maxTextWidth);
+                        for (String wrappedLine : wrappedLines) {
+                            contentStream.beginText();
+                            contentStream.setFont(font, fontSize);
+                            contentStream.newLineAtOffset(xOffset, currentY);
+                            contentStream.showText(wrappedLine);
+                            contentStream.endText();
+                            currentY -= lineSpacing;
+                        }
+                        currentY -= sectionGap;
                     }
 
                     // Languages
@@ -205,11 +258,15 @@ public class PdfEditService {
                         contentStream.showText("Languages");
                         contentStream.endText();
                         currentY -= lineSpacing;
-                        contentStream.beginText();
-                        contentStream.setFont(font, fontSize);
-                        contentStream.newLineAtOffset(xOffset, currentY);
-                        contentStream.showText(sanitizeText(request.getLanguages()));
-                        contentStream.endText();
+                        List<String> wrappedLines = wrapText(sanitizeText(request.getLanguages()), font, fontSize, maxTextWidth);
+                        for (String wrappedLine : wrappedLines) {
+                            contentStream.beginText();
+                            contentStream.setFont(font, fontSize);
+                            contentStream.newLineAtOffset(xOffset, currentY);
+                            contentStream.showText(wrappedLine);
+                            contentStream.endText();
+                            currentY -= lineSpacing;
+                        }
                     }
 
                 } finally {

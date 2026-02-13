@@ -164,7 +164,7 @@ const PdfEditor = () => {
                             </Row>
                         </div>
 
-                        {/* Sections */}
+                        {/* Sections with Blank Lines (Production Resume Style) */}
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Summary</h5>
                             <Form.Control
@@ -175,9 +175,10 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="Brief professional summary..."
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }} // Added wordSpacing for space after each word
                             />
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Summary */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Education</h5>
@@ -189,9 +190,10 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="Degree, University, Year..."
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Education */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Skills</h5>
@@ -203,9 +205,10 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="e.g. Java, AWS, React (comma-separated)"
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Skills */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Projects</h5>
@@ -217,9 +220,10 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="Project details..."
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Projects */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Experience</h5>
@@ -231,10 +235,11 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="Enter 10-12 lines of professional experience..."
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                             <Form.Text className="text-muted">Use \n for new lines.</Form.Text>
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Experience */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Certificates</h5>
@@ -246,9 +251,10 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="e.g. AWS Certified, PMP"
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                         </div>
+                        <div style={{ height: '20px' }}></div> {/* Blank line after Certificates */}
 
                         <div className="mb-3">
                             <h5 className="fw-bold text-uppercase" style={{ color: '#007bff', marginBottom: '10px' }}>Languages</h5>
@@ -260,7 +266,7 @@ const PdfEditor = () => {
                                 onChange={handleInputChange}
                                 placeholder="e.g. English (Fluent), Hindi (Native)"
                                 className="border-0 bg-transparent"
-                                style={{ lineHeight: '1.5' }}
+                                style={{ lineHeight: '1.5', wordSpacing: '2px' }}
                             />
                         </div>
                     </div>
